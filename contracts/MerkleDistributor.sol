@@ -9,29 +9,27 @@ contract MerkleDistributor {
 
     address public immutable token;
     bytes32 public immutable merkleRoot;
-    uint256 public dropAmount;
     
     mapping(address => uint256) private addressesClaimed;
 
-    event Claimed(address indexed _from, uint256 _dropAmount);
+    event Claimed(address indexed _from, uint256 _amount);
 
-    constructor(address _token, bytes32 _merkleRoot, uint256 _dropAmount)  {
+    constructor(address _token, bytes32 _merkleRoot)  {
         token = _token;
         merkleRoot = _merkleRoot;
-        dropAmount = _dropAmount;
     }
 
-    function claim(bytes32[] calldata merkleProof) external {
-        require(addressesClaimed[msg.sender] == 0, "MerkleDistributor: Drop already claimed");
-        bytes32 node = keccak256(abi.encodePacked(msg.sender));
+    function claim(bytes32[] calldata merkleProof, uint256 _amount, address _receiver) external {
+        require(addressesClaimed[_receiver] == 0, "MerkleDistributor: Drop already claimed");
+        bytes32 node = keccak256(abi.encodePacked(_receiver, _amount));
 
         require(MerkleProof.verify(merkleProof, merkleRoot, node), "MerkleDistributor: Invalid proof");
 
-        addressesClaimed[msg.sender] = 1;
+        addressesClaimed[_receiver] = 1;
 
-        require(IERC20(token).transfer(msg.sender, dropAmount), "MerkleDistributor: Transfer failed");
+        require(IERC20(token).transfer(_receiver, _amount), "MerkleDistributor: Transfer failed");
 
-        emit Claimed(msg.sender, dropAmount);
+        emit Claimed(_receiver, _amount);
 
     }
 
